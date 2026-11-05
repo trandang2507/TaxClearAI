@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-me"
     jwt_algorithm: str = "HS256"
     jwt_access_expire_minutes: int = 15
-    frontend_origin: str = "http://localhost:3000"
+    frontend_origin: str = "http://localhost:3000,https://tax-clear-ai.vercel.app"
     bootstrap_username: str = ""
     bootstrap_password: str = ""
     gemini_api_key: str = ""

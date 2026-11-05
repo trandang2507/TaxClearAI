@@ -20,7 +20,20 @@ LOGIN_PATHS = {"/api/v1/auth/sessions", "/api/v1/auth/guest-sessions"}
 
 def allowed_origins() -> list[str]:
     """FRONTEND_ORIGIN có thể liệt kê nhiều nguồn, phân tách bằng dấu phẩy."""
-    return [item.strip() for item in get_settings().frontend_origin.split(",") if item.strip()]
+    configured = [
+        item.strip().rstrip("/")
+        for item in get_settings().frontend_origin.split(",")
+        if item.strip()
+    ]
+    defaults = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://tax-clear-ai.vercel.app",
+    ]
+    for default in defaults:
+        if default not in configured:
+            configured.append(default)
+    return configured
 
 
 class ApiSecurityMiddleware:
@@ -67,7 +80,8 @@ class ApiSecurityMiddleware:
             return
         if scope["method"] in {"POST", "PATCH", "DELETE", "PUT"}:
             # Chỉ nguồn trong FRONTEND_ORIGIN; không ký tự đại diện, không bỏ qua khi thiếu Origin
-            if headers.get("origin") not in allowed_origins():
+            origin = (headers.get("origin") or "").strip().rstrip("/")
+            if not origin or origin not in allowed_origins():
                 await _problem(403, "Không thể gửi yêu cầu", "Nguồn truy cập chưa hợp lệ.", path)(
                     scope, receive, send
                 )
