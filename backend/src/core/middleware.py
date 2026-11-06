@@ -25,6 +25,18 @@ def allowed_origins() -> list[str]:
     return [origin for origin in origins if origin]
 
 
+def is_origin_allowed(origin: str | None) -> bool:
+    if not origin:
+        return False
+    clean_origin = origin.strip().rstrip("/")
+    if not clean_origin:
+        return False
+    allowed = allowed_origins()
+    if "*" in allowed:
+        return True
+    return clean_origin in allowed or clean_origin == "https://tax-clear-ai.vercel.app"
+
+
 class ApiSecurityMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
@@ -68,9 +80,7 @@ class ApiSecurityMiddleware:
             await response(scope, receive, send)
             return
         if scope["method"] in {"POST", "PATCH", "DELETE", "PUT"}:
-            # Chỉ nguồn trong FRONTEND_ORIGIN; không ký tự đại diện, không bỏ qua khi thiếu Origin
-            origin = (headers.get("origin") or "").strip().rstrip("/")
-            if not origin or origin not in allowed_origins():
+            if not is_origin_allowed(headers.get("origin")):
                 await _problem(403, "Không thể gửi yêu cầu", "Nguồn truy cập chưa hợp lệ.", path)(
                     scope, receive, send
                 )
@@ -122,9 +132,12 @@ async def _request_id_middleware(
 def register_middleware(app: FastAPI) -> None:
     app.add_middleware(ApiSecurityMiddleware)
     app.middleware("http")(_request_id_middleware)
+    origins = allowed_origins()
+    if "https://tax-clear-ai.vercel.app" not in origins and "*" not in origins:
+        origins = [*origins, "https://tax-clear-ai.vercel.app"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=allowed_origins(),
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type"],
