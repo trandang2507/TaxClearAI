@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 
+import { SCOPE_TITLES } from '@/components/features/assessments/case-status';
 import { assessmentsService } from '@/services/assessments.service';
 import { expertsService } from '@/services/experts.service';
 import type { Assessment } from '@/types/api.types';
@@ -131,7 +132,7 @@ export function ConsultationModal({
           {result ? (
             <div className={styles.form}>
               <p className={styles.successMessage} role="status">
-                Tax Clear AI đã nhận yêu cầu tư vấn. Yêu cầu đang chờ tiếp nhận.
+                Tax Clear đã nhận yêu cầu tư vấn. Yêu cầu đang chờ tiếp nhận.
               </p>
               <div className={`${styles.formActions} ${styles.fullWidth}`}>
                 <button
@@ -191,7 +192,7 @@ export function ConsultationModal({
                       <span className={styles.caseEyebrow}>Hồ sơ được chuyển giao</span>
                       <h3>
                         {assessment
-                          ? `Nhóm ${assessment.summary.scope.toUpperCase()}`
+                          ? SCOPE_TITLES[assessment.summary.scope]
                           : 'Tóm tắt hồ sơ khảo sát'}
                       </h3>
                     </div>

@@ -9,19 +9,22 @@ import {
   Download,
   PencilLine,
   Plus,
+  Tags,
   Trash2,
   UserCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { PlanDialog } from '@/components/features/pricing/PlanDialog';
 import { assessmentsService } from '@/services/assessments.service';
 import type { Assessment, ItemStatus } from '@/types/api.types';
+import { clearPlanPrompt, peekPlanPrompt } from '@/utils/plan-prompt';
 import { RecommendedExpertsSection } from '@/components/features/experts/RecommendedExpertsSection';
 
 import { CaseSidebar } from './CaseSidebar';
-import { SCOPE_TITLES, STATUS_LABELS, caseStatus, formatDate } from './case-status';
+import { IN_SCOPE, SCOPE_TITLES, STATUS_LABELS, caseStatus, formatDate } from './case-status';
 
 type WorkspaceAssessment = Omit<Assessment, 'answers'>;
 
@@ -49,7 +52,9 @@ function Stepper({ reached }: { reached: number }) {
 }
 
 function summaryHeadline(assessment: WorkspaceAssessment): { title: string; detail: string } {
-  const headlines: Partial<Record<Assessment['summary']['scope'], { title: string; detail: string }>> = {
+  const headlines: Partial<
+    Record<Assessment['summary']['scope'], { title: string; detail: string }>
+  > = {
     a1: {
       title: 'Hộ kinh doanh chưa đăng ký',
       detail: 'Cần làm việc với cơ quan thuế để hợp thức hóa hoặc chấm dứt.',
@@ -75,9 +80,14 @@ function summaryHeadline(assessment: WorkspaceAssessment): { title: string; deta
       detail:
         'Hồ sơ đang thiếu các thông tin then chốt. Hãy kết nối với chuyên gia để được hỗ trợ tra cứu và xác định lộ trình chính xác.',
     },
+    household: {
+      title: 'Hộ kinh doanh chuẩn bị chấm dứt hoạt động',
+      detail: 'Cần xác nhận quy trình chấm dứt và nghĩa vụ thuế trước khi đăng ký hộ mới.',
+    },
     out_of_scope: {
-      title: 'Hồ sơ từ phiên bản khảo sát cũ',
-      detail: 'Mở khảo sát mới để nhận phân nhóm và checklist cập nhật.',
+      title: 'Thủ tục này chưa có danh mục trong bản thử',
+      detail:
+        'Bản thử hiện chỉ chuẩn bị hồ sơ giải thể hoặc chấm dứt hoạt động. Câu trả lời của bạn được ghi lại để trao đổi với chuyên viên.',
     },
   };
   return headlines[assessment.summary.scope] ?? headlines.needs_confirmation!;
@@ -91,9 +101,12 @@ export function AssessmentWorkspace({ initial }: { initial: WorkspaceAssessment 
   const [error, setError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Gợi ý gói chỉ hiện một lần, ngay sau khi khảo sát vừa lưu xong (trang này chỉ dựng ở phía trình duyệt)
+  const [plansOpen, setPlansOpen] = useState(() => peekPlanPrompt(initial.id));
+  useEffect(() => clearPlanPrompt(initial.id), [initial.id]);
 
   const status = caseStatus(assessment);
-  const inScope = ['a1', 'a2', 'a3', 'b1', 'b2'].includes(assessment.summary.scope);
+  const inScope = IN_SCOPE.includes(assessment.summary.scope);
   const remaining = assessment.checklist.filter((item) => item.status !== 'available').length;
   const available = assessment.checklist.length - remaining;
   const headline = summaryHeadline(assessment);
@@ -109,6 +122,12 @@ export function AssessmentWorkspace({ initial }: { initial: WorkspaceAssessment 
     .filter(Boolean)
     .join('\n\n');
   const reached = !inScope ? 1 : status === 'ready' ? 4 : 2;
+  const counts = {
+    available: assessment.checklist.filter((item) => item.status === 'available').length,
+    missing: assessment.checklist.filter((item) => item.status === 'missing').length,
+    needsVerification: assessment.checklist.filter((item) => item.status === 'needs_verification')
+      .length,
+  };
 
   async function update(itemId: string, value: ItemStatus): Promise<void> {
     setSaving(itemId);
@@ -217,10 +236,18 @@ export function AssessmentWorkspace({ initial }: { initial: WorkspaceAssessment 
               <PencilLine size={16} /> Cập nhật giấy tờ
             </a>
           )}
+          <button
+            className="button button-outline"
+            onClick={() => setPlansOpen(true)}
+            type="button"
+          >
+            <Tags size={16} /> Xem các gói hỗ trợ
+          </button>
           <Link className="button button-primary" href={`/ho-so/${assessment.id}/ban-in`}>
             <Download size={16} /> Tải bản tổng hợp
           </Link>
         </div>
+        <PlanDialog counts={counts} onOpenChange={setPlansOpen} open={plansOpen} />
 
         <section className="card checklist-card" id="checklist" aria-labelledby="checklist-heading">
           <div className="panel-heading">
@@ -263,32 +290,35 @@ export function AssessmentWorkspace({ initial }: { initial: WorkspaceAssessment 
                 );
               })}
             </ul>
-          ) : (
-            assessment.summary.scope === 'needs_confirmation' ? (
-              <div className="scope-confirmation-banner" aria-labelledby="scope-confirmation-heading">
-                <div className="scope-confirmation-content">
-                  <CircleAlert className="overview-icon warn" size={24} aria-hidden="true" />
-                  <div>
-                    <h3 id="scope-confirmation-heading">
-                      Cần xác nhận phạm vi trước khi lập checklist
-                    </h3>
-                    <p>
-                      Do chưa xác định được tình trạng đăng ký hoặc phát sinh doanh thu, hệ thống chưa
-                      thể tạo checklist tự động. Bạn nên trao đổi trực tiếp với chuyên gia để được hỗ
-                      trợ kiểm tra mã số thuế và hướng dẫn bước tiếp theo.
-                    </p>
-                  </div>
+          ) : assessment.summary.scope === 'needs_confirmation' ? (
+            <div className="scope-confirmation-banner" aria-labelledby="scope-confirmation-heading">
+              <div className="scope-confirmation-content">
+                <CircleAlert className="overview-icon warn" size={24} aria-hidden="true" />
+                <div>
+                  <h3 id="scope-confirmation-heading">
+                    Cần xác nhận phạm vi trước khi lập checklist
+                  </h3>
+                  <p>
+                    Do chưa xác định được tình trạng đăng ký hoặc phát sinh doanh thu, hệ thống chưa
+                    thể tạo checklist tự động. Bạn nên trao đổi trực tiếp với chuyên gia để được hỗ
+                    trợ kiểm tra mã số thuế và hướng dẫn bước tiếp theo.
+                  </p>
                 </div>
-                <Link className="button button-primary" href={`/chuyen-gia?assessmentId=${assessment.id}`}>
-                  <UserCheck size={16} /> Kết nối chuyên gia để xác định phạm vi
-                </Link>
               </div>
-            ) : (
-              <div className="empty-inline">
-                <h3>Hồ sơ chưa có checklist.</h3>
-                <p className="small muted">Mở khảo sát mới để nhận danh mục phù hợp với nhóm hồ sơ.</p>
-              </div>
-            )
+              <Link
+                className="button button-primary"
+                href={`/chuyen-gia?assessmentId=${assessment.id}`}
+              >
+                <UserCheck size={16} /> Kết nối chuyên gia để xác định phạm vi
+              </Link>
+            </div>
+          ) : (
+            <div className="empty-inline">
+              <h3>Hồ sơ chưa có checklist.</h3>
+              <p className="small muted">
+                Mở khảo sát mới để nhận danh mục phù hợp với nhóm hồ sơ.
+              </p>
+            </div>
           )}
           {saving && (
             <p role="status" className="small muted">

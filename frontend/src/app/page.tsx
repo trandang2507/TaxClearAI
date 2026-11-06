@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-import { HeroIllustration } from '@/components/features/home/HeroIllustration';
+import { HeroPhoto } from '@/components/features/home/HeroPhoto';
 import { AppShell } from '@/components/features/navigation/AppShell';
 
 const START_POINTS = [
@@ -18,7 +18,7 @@ const START_POINTS = [
     href: '/khao-sat',
     icon: FileText,
     title: 'Trả lời khảo sát',
-    text: '14 câu hỏi ngắn để ghi nhận tình trạng hộ kinh doanh hoặc doanh nghiệp.',
+    text: 'Các câu hỏi ngắn để ghi nhận tình trạng của doanh nghiệp. Câu nào chưa rõ, chọn “không biết” hoặc bỏ trống.',
   },
   {
     href: '/ho-so',
@@ -65,8 +65,8 @@ export default function HomePage() {
               <span>An tâm sang trang.</span>
             </h1>
             <p className="hero-description">
-              Tax Clear AI giúp doanh nghiệp từng hoạt động muốn giải thể ghi nhận tình trạng, sắp
-              xếp giấy tờ và chuẩn bị cho buổi làm việc với chuyên viên.
+              Tax Clear giúp doanh nghiệp từng hoạt động muốn giải thể ghi nhận tình trạng, sắp xếp
+              giấy tờ và chuẩn bị cho buổi làm việc với chuyên viên.
             </p>
             <Link className="button button-primary button-large" href="/khao-sat">
               Bắt đầu chuẩn bị hồ sơ <ArrowRight size={18} />
@@ -76,7 +76,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="hero-visual">
-            <HeroIllustration />
+            <HeroPhoto />
           </div>
         </section>
         <section className="start-section" aria-labelledby="start-heading">

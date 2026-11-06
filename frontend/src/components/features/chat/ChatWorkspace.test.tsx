@@ -20,6 +20,31 @@ function ask(): void {
 }
 
 describe('Trợ lý có nguồn', () => {
+  it('hiện trạng thái chờ rõ ràng trong lúc trợ lý trả lời', async () => {
+    vi.mocked(chatService.send).mockReturnValue(new Promise(() => undefined));
+    render(<ChatWorkspace />);
+    ask();
+    expect(await screen.findByRole('status')).toHaveTextContent('Đang tìm nguồn phù hợp');
+  });
+
+  it('thử lại đúng câu hỏi đã lỗi mà không bắt gõ lại', async () => {
+    vi.mocked(chatService.send)
+      .mockRejectedValueOnce(new ApiError(504, 'Trợ lý phản hồi chậm. Vui lòng thử lại sau.'))
+      .mockResolvedValueOnce({
+        reply: 'Đây là câu trả lời.',
+        disposition: 'answered',
+        providerUsed: true,
+        citations: [],
+      });
+    render(<ChatWorkspace />);
+    ask();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Trợ lý phản hồi chậm');
+    fireEvent.click(screen.getByRole('button', { name: /Thử lại câu này/ }));
+    expect(await screen.findByText('Đây là câu trả lời.')).toBeInTheDocument();
+    expect(chatService.send).toHaveBeenCalledTimes(2);
+    expect(chatService.send).toHaveBeenNthCalledWith(2, 'Tôi dùng checklist thế nào?');
+  });
+
   it('chọn chủ đề gợi ý điền sẵn câu hỏi, chưa gửi khi chưa xác nhận', () => {
     render(<ChatWorkspace />);
     fireEvent.click(screen.getByRole('button', { name: /Hồ sơ cần chuẩn bị/ }));
@@ -101,7 +126,7 @@ describe('Trợ lý có nguồn', () => {
       citations: [
         {
           sourceId: 'product-guide',
-          title: 'Hướng dẫn sử dụng Tax Clear AI',
+          title: 'Hướng dẫn sử dụng Tax Clear',
           url: '/huong-dan',
           reviewedAt: '2026-10-30',
           kind: 'product',
@@ -112,7 +137,7 @@ describe('Trợ lý có nguồn', () => {
     ask();
     expect(await screen.findByText('Bạn chọn Đã có cho giấy tờ đang giữ.')).toBeInTheDocument();
     expect(screen.getByText('Gemini · có gọi mô hình')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Hướng dẫn sử dụng Tax Clear AI' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Hướng dẫn sử dụng Tax Clear' })).toHaveAttribute(
       'href',
       '/huong-dan',
     );

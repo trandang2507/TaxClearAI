@@ -20,20 +20,9 @@ LOGIN_PATHS = {"/api/v1/auth/sessions", "/api/v1/auth/guest-sessions"}
 
 def allowed_origins() -> list[str]:
     """FRONTEND_ORIGIN có thể liệt kê nhiều nguồn, phân tách bằng dấu phẩy."""
-    configured = [
-        item.strip().rstrip("/")
-        for item in get_settings().frontend_origin.split(",")
-        if item.strip()
-    ]
-    defaults = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://tax-clear-ai.vercel.app",
-    ]
-    for default in defaults:
-        if default not in configured:
-            configured.append(default)
-    return configured
+    # Bỏ dấu "/" cuối: trình duyệt gửi Origin không có "/", người cấu hình hay dán kèm
+    origins = (item.strip().rstrip("/") for item in get_settings().frontend_origin.split(","))
+    return [origin for origin in origins if origin]
 
 
 class ApiSecurityMiddleware:

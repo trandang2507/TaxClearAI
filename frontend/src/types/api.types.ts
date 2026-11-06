@@ -1,32 +1,23 @@
 export type TriState = 'yes' | 'no' | 'unknown';
 export type ItemStatus = 'available' | 'missing' | 'needs_verification';
-export interface Answers {
-  businessType: 'company' | 'household' | 'unknown';
-  registrationStatus: TriState;
-  householdGoal: 'new_household' | 'stop' | 'continue' | 'unknown';
-  goal: 'dissolution' | 'other' | 'unknown';
-  establishedYear: number | null;
-  revenueStatus: TriState;
-  revenueStartedYear: number | null;
-  filingStatus: 'complete' | 'incomplete' | 'never' | 'unknown';
-  discrepancyStatus: TriState;
-  recordsStatus: 'complete' | 'partial' | 'missing' | 'unknown';
-  taxNoticeStatus: TriState;
-  laborInsuranceStatus: 'none' | 'obligations' | 'unknown';
-  assetsInventoryStatus: TriState;
-  receivablesPayablesStatus: TriState;
+// Backend là nguồn duy nhất của danh sách câu hỏi; câu trả lời là bản đồ id → giá trị
+export type Answers = Record<string, string | number | null>;
+export interface Question {
+  id: string;
+  label: string;
+  kind: 'choice' | 'year' | 'text' | 'number';
+  required: boolean;
+  options: { value: string; label: string }[];
+  help?: string | null;
+  unit?: string | null;
+  // Chỉ hỏi khi mọi câu trả lời trước đó nằm trong danh sách cho phép; thiếu = luôn hỏi
+  showIf?: Record<string, string[]> | null;
 }
 export interface Questionnaire {
   id: string;
   version: string;
   contentStatus: 'draft' | 'approved';
-  questions: {
-    id: keyof Answers;
-    label: string;
-    kind: 'choice' | 'year';
-    required: boolean;
-    options: { value: string; label: string }[];
-  }[];
+  questions: Question[];
 }
 export interface ChecklistItem {
   id: string;
@@ -42,7 +33,7 @@ export interface Assessment {
   contentStatus: 'draft' | 'approved';
   answers: Answers;
   summary: {
-    scope: 'a1' | 'a2' | 'a3' | 'b1' | 'b2' | 'out_of_scope' | 'needs_confirmation';
+    scope: 'a1' | 'a2' | 'a3' | 'b1' | 'b2' | 'household' | 'out_of_scope' | 'needs_confirmation';
     knownFacts: string[];
     unknownFacts: string[];
     reviewReasons: string[];

@@ -8,6 +8,7 @@ import {
   FolderOpen,
   House,
   Menu,
+  Tags,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -18,7 +19,7 @@ import { BrandLogo } from '../brand/BrandLogo';
 
 import { UserMenu } from './UserMenu';
 
-type Section = 'home' | 'cases' | 'survey' | 'chat' | 'community' | 'experts' | 'legal' | '';
+type Section = 'home' | 'cases' | 'survey' | 'chat' | 'community' | 'experts' | 'legal' | 'pricing' | '';
 
 const NAVIGATION_ITEMS = [
   { href: '/', section: 'home', label: 'Trang chủ', icon: House },
@@ -27,6 +28,7 @@ const NAVIGATION_ITEMS = [
   { href: '/cong-dong', section: 'community', label: 'Cộng đồng', icon: UsersRound },
   { href: '/chuyen-gia', section: 'experts', label: 'Chuyên gia', icon: BriefcaseBusiness },
   { href: '/phap-luat', section: 'legal', label: 'Thư viện pháp luật', icon: BookOpenText },
+  { href: '/bang-gia', section: 'pricing', label: 'Bảng giá', icon: Tags },
 ] as const;
 
 export function AppShell({
@@ -61,7 +63,7 @@ export function AppShell({
         Đến nội dung chính
       </a>
       <header className="site-header">
-        <Link href="/" className="brand" aria-label="Tax Clear AI — Trang chủ">
+        <Link href="/" className="brand" aria-label="Tax Clear — Trang chủ">
           <BrandLogo height={44} />
         </Link>
         <nav className="desktop-navigation" aria-label="Điều hướng chính">
@@ -134,7 +136,7 @@ export function AppShell({
       </header>
       {children}
       <footer className="site-footer">
-        <span>Tax Clear AI · Bản thử nghiệm · Chỉ dùng dữ liệu giả định.</span>
+        <span>Tax Clear · Bản thử nghiệm · Chỉ dùng dữ liệu giả định.</span>
         <Link href="/huong-dan">Hướng dẫn sử dụng</Link>
       </footer>
     </div>
